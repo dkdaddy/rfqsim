@@ -71,6 +71,7 @@
                             <th data-sort-key="trader">TRADER <span class="sort-indicator"></span></th>
                             <th data-sort-key="dv01">DV01 <span class="sort-indicator"></span></th>
                             <th data-sort-key="remainingTime">REMAINING <span class="sort-indicator"></span></th>
+                            <th>PRICE</th>
                             <th>ACTIONS</th>
                         </tr>
                         <tr class="filter-row">
@@ -87,11 +88,12 @@
                             <td><input type="text" data-filter-key="trader" placeholder="Filter Trader"></td>
                             <td><input type="text" data-filter-key="dv01" placeholder="Filter DV01"></td>
                             <td><input type="text" data-filter-key="remainingTime" placeholder="Filter Time"></td>
+                            <td></td> <!-- Placeholder for Price filter if added later -->
                             <td><button id="clearFiltersButton" class="btn btn-xs bg-gray-700 hover:bg-gray-600 text-gray-400 w-full">Clear</button></td>
                         </tr>
                     </thead>
                     <tbody id="rfqTableBody">
-                        <tr id="noRfqsMessageRow"><td colspan="14" class="text-center py-10 italic text-gray-600">Awaiting Connection & Subscription...</td></tr>
+                        <tr id="noRfqsMessageRow"><td colspan="15" class="text-center py-10 italic text-gray-600">Awaiting Connection & Subscription...</td></tr>
                     </tbody>
                 </table>
             </div>

@@ -239,8 +239,11 @@ function createRfqTableRow(rfq) {
             ${rfq.status === 'Lapsed' || rfq.status === 'Passed' || rfq.status === 'Filled' ? '---' : remainingTime.formatted}
         </td>
         <td>
+            <input type="number" step="0.0001" class="row-price-input bg-gray-900 border border-gray-700 text-xs w-24 py-0.5 px-1 rounded-sm focus:ring-1 focus:ring-amber-500 focus:border-amber-500" placeholder="Price" data-rfqid="${rfq.id}" ${!isActionable ? 'disabled' : ''}>
+        </td>
+        <td>
             <div class="flex space-x-1 justify-start">
-                <button class="respond-btn btn btn-action-respond" data-rfqid="${rfq.id}" ${!isActionable ? 'disabled' : ''}>Hit</button>
+                <button class="respond-btn btn btn-action-respond" data-rfqid="${rfq.id}" ${!isActionable ? 'disabled' : ''}>SEND</button>
                 <button class="pass-btn btn btn-action-pass" data-rfqid="${rfq.id}" ${!isActionable ? 'disabled' : ''}>Pass</button>
             </div>
         </td>
@@ -278,10 +281,70 @@ function flashRow(rowElement, side) {
 function attachActionButtonsToRow(rowElement) {
     const respondBtn = rowElement.querySelector('.respond-btn');
     if (respondBtn) {
-        respondBtn.addEventListener('click', (e) => {
+        respondBtn.addEventListener('click', async (e) => {
             e.stopPropagation();
             const rfqId = e.target.dataset.rfqid;
-            openRespondModal(rfqId);
+            const rfq = rfqDataMap.get(rfqId);
+            if (!rfq) {
+                logMessage(`Error: RFQ ${rfqId.slice(-6)} not found for quick row response.`, 'error');
+                return;
+            }
+
+            const currentRow = e.target.closest('tr');
+            const priceInputEl = currentRow.querySelector('.row-price-input');
+            if (!priceInputEl) {
+                logMessage(`Error: Price input not found for RFQ ${rfqId.slice(-6)}.`, 'error');
+                return;
+            }
+
+            const price = parseFloat(priceInputEl.value);
+            if (isNaN(price) || price <= 0) {
+                logMessage(`ROW_RESP ERR: Valid price required for RFQ ${rfqId.slice(-6)}.`, 'error');
+                priceInputEl.focus();
+                priceInputEl.classList.add('border-red-500', 'ring-red-500');
+                setTimeout(() => priceInputEl.classList.remove('border-red-500', 'ring-red-500'), 2000);
+                return;
+            }
+
+            const traderId = localStorage.getItem('rfqTraderId') || 'TRADER_BTM_ROW'; // Default for row quick send
+            const payload = {
+                traderId: traderId,
+                responseType: 'FIXED_PRICE', // Quick response is always fixed price
+                priceDetails: {
+                    price: price,
+                    quantity: rfq.size // Respond with the full RFQ size
+                }
+            };
+
+            // Optimistic UI update
+            rfq.status = 'On the Wire';
+            rfq.respondingTraderId = traderId;
+            rfqDataMap.set(rfqId, rfq); // Update the map
+            renderTable(); // Re-render to show status change in grid
+            if (currentSelectedRfqId === rfqId) {
+                displayRfqDetails(rfqId); // Refresh detail panel if this RFQ is selected
+            }
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/rfqs/${rfqId}/respond`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const result = await response.json();
+                if (response.ok) {
+                    logMessage(`ROW_RESP_SENT: RFQ ${rfqId.slice(-6)} @ ${price.toFixed(4)} - ${result.message}`, 'success');
+                    priceInputEl.value = ''; // Clear on success
+                } else {
+                    logMessage(`ROW_RESP_ERR: RFQ ${rfqId.slice(-6)} - ${result.message || response.statusText}`, 'error');
+                    priceInputEl.classList.add('border-red-500', 'ring-red-500');
+                    setTimeout(() => priceInputEl.classList.remove('border-red-500', 'ring-red-500'), 2000);
+                }
+            } catch (err) {
+                logMessage(`NET_ERR: ROW_RESP RFQ ${rfqId.slice(-6)} - ${err.message}`, 'error');
+                priceInputEl.classList.add('border-red-500', 'ring-red-500');
+                setTimeout(() => priceInputEl.classList.remove('border-red-500', 'ring-red-500'), 2000);
+            }
         });
     }
 
@@ -632,7 +695,38 @@ document.addEventListener('DOMContentLoaded', () => {
     // Start interval to update the table for countdowns
     if (tableUpdateInterval) clearInterval(tableUpdateInterval);
     tableUpdateInterval = setInterval(() => {
-        if (rfqDataMap.size > 0) renderTable();
+        if (rfqDataMap.size > 0) {
+            document.querySelectorAll('#rfqTableBody tr[id^="rfq-"]').forEach(row => {
+                const rfqId = row.id.replace('rfq-', '');
+                const rfq = rfqDataMap.get(rfqId);
+                if (rfq) {
+                    const remainingTimeCell = row.cells[12]; // REMAINING column is at index 12
+
+                    if (remainingTimeCell) {
+                        // Check if RFQ is in a final state where time should be '---'
+                        if (rfq.status === 'Lapsed' || rfq.status === 'Passed' || rfq.status === 'Filled' || 
+                            rfq.status === 'Expired' || rfq.status === 'Done' || rfq.status === 'Traded' || rfq.status === 'Cancelled') {
+                            if (remainingTimeCell.textContent !== '---') {
+                                remainingTimeCell.textContent = '---';
+                            }
+                            remainingTimeCell.className = 'text-gray-500'; // Apply consistent styling for terminal states
+                        } else {
+                            // RFQ is active, update countdown
+                            const remainingTime = calculateRemainingTime(rfq.startTime, rfq.timeToLive);
+                            remainingTimeCell.textContent = remainingTime.formatted;
+
+                            remainingTimeCell.className = ''; // Reset classes first
+                            if (remainingTime.seconds <= 10 && remainingTime.seconds > 0) {
+                                remainingTimeCell.classList.add('text-red-400', 'font-semibold');
+                            } else if (remainingTime.seconds === 0) {
+                                // Status will likely change to Lapsed soon via server update, which will call renderTable.
+                                remainingTimeCell.classList.add('text-gray-500');
+                            }
+                        }
+                    }
+                }
+            });
+        }
     }, 1000); // Update every second
 
     // Add event listener for header clicks (sorting)
@@ -691,6 +785,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 quantity: rfq.size // Respond with the full RFQ size
             }
         };
+
+        // Optimistic UI update
+        rfq.status = 'On the Wire';
+        rfq.respondingTraderId = traderId;
+        rfqDataMap.set(rfq.id, rfq); // Update the map
+        renderTable(); // Re-render to show status change in grid
+        displayRfqDetails(rfq.id); // Refresh detail panel
+
 
         try {
             const response = await fetch(`${API_BASE_URL}/rfqs/${rfq.id}/respond`, {
