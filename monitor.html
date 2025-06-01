@@ -3,550 +3,155 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RFQ Monitor - Dark</title>
+    <title>RFQ Monitor // BTerminal</title>    
     <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        body { 
-            font-family: 'Inter', sans-serif; 
-            background-color: #111827; /* Tailwind gray-900 */
-            color: #F59E0B; /* Tailwind amber-500 */
-        }
-        .modal {
-            transition: opacity 0.25s ease;
-        }
-        .modal-active {
-            overflow-x: hidden;
-            overflow-y: auto;
-        }
-        
-        /* Bloomberg-like table styling */
-        .rfq-table th, .rfq-table td {
-            padding: 0.5rem 0.75rem; /* py-2 px-3 */
-            border-bottom: 1px solid #374151; /* Tailwind gray-700 */
-            font-size: 0.875rem; /* text-sm */
-        }
-        .rfq-table th {
-            background-color: #1F2937; /* Tailwind gray-800 */
-            color: #FBBF24; /* Tailwind amber-400 */
-            text-align: left;
-            font-weight: 600; /* semibold */
-        }
-        .rfq-table tbody tr:hover {
-            background-color: #1F2937; /* gray-800 */
-        }
-
-        /* Status specific text colors */
-        .status-text-New { color: #60A5FA; } /* Tailwind blue-400 */
-        .status-text-On_the_Wire { color: #FACC15; } /* Tailwind yellow-400 */
-        .status-text-Passed { color: #F87171; } /* Tailwind red-400 */
-        .status-text-Lapsed { color: #9CA3AF; } /* Tailwind gray-400 */
-
-        /* Custom scrollbar for dark theme */
-        ::-webkit-scrollbar {
-            width: 8px;
-            height: 8px;
-        }
-        ::-webkit-scrollbar-track {
-            background: #1F2937; /* gray-800 */
-            border-radius: 10px;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #4B5563; /* gray-600 */
-            border-radius: 10px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: #6B7280; /* gray-500 */
-        }
-
-        /* Inputs and Buttons */
-        input[type="text"], input[type="number"], select {
-            background-color: #374151; /* gray-700 */
-            color: #F59E0B; /* amber-500 */
-            border: 1px solid #4B5563; /* gray-600 */
-        }
-        input[type="text"]:focus, input[type="number"]:focus, select:focus {
-            border-color: #F59E0B; /* amber-500 */
-            ring: 1px solid #F59E0B;
-        }
-        .btn-primary {
-            background-color: #D97706; /* amber-600 */
-            color: #111827; /* gray-900 */
-        }
-        .btn-primary:hover {
-            background-color: #B45309; /* amber-700 */
-        }
-        .btn-secondary {
-            background-color: #4B5563; /* gray-600 */
-            color: #F3F4F6; /* gray-100 */
-        }
-        .btn-secondary:hover {
-            background-color: #374151; /* gray-700 */
-        }
-         .btn-danger {
-            background-color: #DC2626; /* red-600 */
-            color: white;
-        }
-        .btn-danger:hover {
-            background-color: #B91C1C; /* red-700 */
-        }
-         .btn-success {
-            background-color: #059669; /* green-600 */
-            color: white;
-        }
-        .btn-success:hover {
-            background-color: #047857; /* green-700 */
-        }
-
-    </style>
+    <link rel="stylesheet" href="monitor.css">
 </head>
 <body class="flex flex-col min-h-screen">
 
-    <header class="bg-gray-950 text-amber-400 p-3 shadow-md border-b border-gray-700">
-        <div class="container mx-auto flex justify-between items-center">
-            <h1 class="text-xl font-bold">RFQ Monitor</h1>
-            <div id="connectionStatus" class="text-xs px-3 py-1 rounded-full bg-gray-700 text-amber-300">
-                Status: Disconnected
+    <header class="bg-black text-amber-400 p-2 shadow-md border-b border-gray-700">
+        <div class="container mx-auto flex justify-between items-center px-2">
+            <h1 class="text-lg font-normal">RFQMON</h1>
+            <div class="flex items-center space-x-3">
+                <span class="text-xs">INSTR:</span>
+                <input type="text" id="instrumentTypeInput" value="GovBond" class="w-24 text-xs">
+                <button id="subscribeButton" class="btn btn-primary">Connect</button>
+                <button id="disconnectButton" class="btn bg-gray-700 text-gray-400 hover:bg-gray-600" disabled>Disconn</button>
+            </div>
+            <div id="connectionStatus" class="text-xs px-2 py-0.5 bg-gray-700 text-amber-300">
+                OFFLINE
             </div>
         </div>
     </header>
 
-    <main class="container mx-auto p-4 flex-grow w-full max-w-full">
-        <div class="bg-gray-800 p-4 rounded-md shadow-lg mb-4">
-            <h2 class="text-lg font-semibold mb-3 text-amber-400">Subscription Control</h2>
-            <div class="flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-2">
-                <input type="text" id="instrumentTypeInput" placeholder="Instrument Type" value="GovBond"
-                       class="flex-grow p-2 border rounded-md focus:ring-1 focus:ring-amber-500 focus:border-transparent outline-none text-sm">
-                <button id="subscribeButton"
-                        class="w-full sm:w-auto btn-primary font-semibold py-2 px-4 rounded-md transition duration-150 ease-in-out text-sm">
-                    Subscribe
-                </button>
-                 <button id="disconnectButton"
-                        class="w-full sm:w-auto btn-danger font-semibold py-2 px-4 rounded-md transition duration-150 ease-in-out text-sm" disabled>
-                    Disconnect
-                </button>
+    <main class="container mx-auto px-2 py-2 flex-grow w-full max-w-full flex flex-col">
+        <div id="rfqDetailPanel" class="bg-black text-amber-400 p-2 mb-2 border border-gray-700 rounded-sm shadow-md">
+            <h2 class="text-sm text-amber-500 uppercase border-b border-gray-700 mb-2 pb-1">SELECTED RFQ DETAILS</h2>
+            <div id="rfqDetailContent" class="hidden grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-x-4 gap-y-1.5 text-xs">
+                <div><span class="font-medium text-gray-500">ID:</span> <span id="detailRfqId" class="text-gray-100">-</span></div>
+                <div><span class="font-medium text-gray-500">Time:</span> <span id="detailRfqTime" class="text-gray-100">-</span></div>
+                <div><span class="font-medium text-gray-500">Side:</span> <span id="detailRfqSide" class="text-gray-100">-</span></div>
+                <div><span class="font-medium text-gray-500">Quantity:</span> <span id="detailRfqQty" class="text-gray-100">-</span></div>
+                <div><span class="font-medium text-gray-500">Instrument:</span> <span id="detailRfqInst" class="text-gray-100">-</span></div>
+                <div><span class="font-medium text-gray-500">Currency:</span> <span id="detailRfqCcy" class="text-gray-100">-</span></div>
+                <div><span class="font-medium text-gray-500">Maturity:</span> <span id="detailRfqMat" class="text-gray-100">-</span></div>
+                <div><span class="font-medium text-gray-500">Venue:</span> <span id="detailRfqVenue" class="text-gray-100">-</span></div>
+                <div><span class="font-medium text-gray-500">Customer:</span> <span id="detailRfqCust" class="text-gray-100">-</span></div>
+                <div><span class="font-medium text-gray-500">Status:</span> <span id="detailRfqStatus" class="text-gray-100">-</span></div>
+                <div><span class="font-medium text-gray-500">Trader:</span> <span id="detailRfqTrader" class="text-gray-100">-</span></div>
+                <!-- Quick Respond Section -->
+                <div class="col-span-full mt-2 pt-2 border-t border-gray-700 flex items-center space-x-2" id="quickRespondSection">
+                    <label for="detailRespondPriceInput" class="font-medium text-gray-500 text-xs">Respond Price:</label>
+                    <input type="number" step="0.0001" id="detailRespondPriceInput" placeholder="e.g., 100.0250" class="text-xs w-28">
+                    <button id="detailRespondSubmitButton" class="btn btn-action-respond text-xs px-2 py-0.5">Submit Hit</button>
+                </div>
+            </div>
+            <div id="noRfqSelectedMessage" class="text-center py-3 italic text-gray-500 text-xs">
+                No RFQ selected. Click on a row in the table below to see details.
             </div>
         </div>
 
-        <div class="grid grid-cols-1 xl:grid-cols-3 gap-4">
-            <div class="xl:col-span-2 bg-gray-800 p-4 rounded-md shadow-lg">
-                <h2 class="text-lg font-semibold mb-3 text-amber-400">Live RFQs</h2>
-                <div class="overflow-x-auto max-h-[65vh]">
-                    <table class="min-w-full rfq-table">
-                        <thead>
-                            <tr>
-                                <th>ID</th>
-                                <th>Instrument</th>
-                                <th>Size</th>
-                                <th>Status</th>
-                                <th>Venue</th>
-                                <th>Trader</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="rfqTableBody">
-                            <tr id="noRfqsMessageRow"><td colspan="7" class="text-center py-4 italic text-gray-500">No RFQs received yet for the current subscription. Waiting for data...</td></tr>
-                        </tbody>
-                    </table>
-                </div>
+        <div class="flex-grow bg-black border border-gray-700 overflow-hidden">
+            <div class="overflow-auto h-[570px]">
+                <table class="min-w-full rfq-grid">
+                    <thead>
+                        <tr>
+                            <th data-sort-key="id">ID <span class="sort-indicator"></span></th>
+                            <th data-sort-key="startTime">TIME <span class="sort-indicator"></span></th>
+                            <th data-sort-key="side">SIDE <span class="sort-indicator"></span></th>
+                            <th data-sort-key="size">QTY <span class="sort-indicator"></span></th>
+                            <th data-sort-key="instrument">INST <span class="sort-indicator"></span></th>
+                            <th data-sort-key="currency">CCY <span class="sort-indicator"></span></th>
+                            <th data-sort-key="maturity">MAT <span class="sort-indicator"></span></th>
+                            <th data-sort-key="venue">VENUE <span class="sort-indicator"></span></th>
+                            <th data-sort-key="customer">CUST <span class="sort-indicator"></span></th>
+                            <th data-sort-key="status">STATUS <span class="sort-indicator"></span></th>
+                            <th data-sort-key="trader">TRADER <span class="sort-indicator"></span></th>
+                            <th>ACTIONS</th>
+                        </tr>
+                        <tr class="filter-row">
+                            <td><input type="text" data-filter-key="id" placeholder="Filter ID"></td>
+                            <td><input type="text" data-filter-key="startTime" placeholder="Filter Time"></td>
+                            <td><input type="text" data-filter-key="side" placeholder="Filter Side"></td>
+                            <td><input type="text" data-filter-key="size" placeholder="Filter Qty"></td>
+                            <td><input type="text" data-filter-key="instrument" placeholder="Filter Inst"></td>
+                            <td><input type="text" data-filter-key="currency" placeholder="Filter Ccy"></td>
+                            <td><input type="text" data-filter-key="maturity" placeholder="Filter Mat"></td>
+                            <td><input type="text" data-filter-key="venue" placeholder="Filter Venue"></td>
+                            <td><input type="text" data-filter-key="customer" placeholder="Filter Cust"></td>
+                            <td><input type="text" data-filter-key="status" placeholder="Filter Status"></td>
+                            <td><input type="text" data-filter-key="trader" placeholder="Filter Trader"></td>
+                            <td><button id="clearFiltersButton" class="btn btn-xs bg-gray-700 hover:bg-gray-600 text-gray-400 w-full">Clear</button></td>
+                        </tr>
+                    </thead>
+                    <tbody id="rfqTableBody">
+                        <tr id="noRfqsMessageRow"><td colspan="12" class="text-center py-10 italic text-gray-600">Awaiting Connection & Subscription...</td></tr>
+                    </tbody>
+                </table>
             </div>
-
-            <div class="bg-gray-900 text-amber-300 p-4 rounded-md shadow-lg">
-                <h2 class="text-lg font-semibold mb-3 text-amber-400">Action Log / Messages</h2>
-                <div id="actionLog" class="space-y-1 text-xs max-h-[65vh] overflow-y-auto p-2 rounded-sm bg-gray-950 border border-gray-700">
-                    <p class="italic">WebSocket messages and action logs will appear here.</p>
-                </div>
+        </div>
+         <div class="bg-gray-950 text-amber-300 p-2 mt-2 border border-gray-700 h-24 overflow-y-auto">
+            <h2 class="text-xs text-amber-500 uppercase border-b border-gray-700 mb-1 pb-0.5">EVENT LOG</h2>
+            <div id="actionLog" class="space-y-0.5 text-xs">
+                <p class="italic text-gray-600">System messages will appear here.</p>
             </div>
         </div>
     </main>
 
-    <footer class="bg-gray-950 text-amber-400 text-center p-3 mt-auto border-t border-gray-700">
-        <p class="text-xs">&copy; 2025 RFQ Monitor Demo</p>
-    </footer>
 
-    <div id="respondModal" class="modal fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center p-4 opacity-0 pointer-events-none z-50">
-        <div class="bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-md transform transition-all scale-95 text-amber-400 border border-gray-700">
-            <h3 class="text-lg font-semibold mb-4">Respond to RFQ <span id="respondModalRfqId" class="font-mono text-amber-300"></span></h3>
+    <div id="respondModal" class="fixed inset-0 flex items-center justify-center p-4 opacity-0 pointer-events-none z-50 modal">
+        <div class="modal-content rounded-none shadow-xl p-4 w-full max-w-sm">
+            <h3 class="text-sm font-semibold mb-3 uppercase border-b border-gray-700 pb-1">Respond RFQ: <span id="respondModalRfqId" class="font-normal"></span></h3>
             <input type="hidden" id="respondRfqIdHidden">
-            <div class="space-y-3">
+            <div class="space-y-2 text-xs">
                 <div>
-                    <label for="traderIdInput" class="block text-xs font-medium text-amber-300">Trader ID:</label>
-                    <input type="text" id="traderIdInput" value="TRADER_UI_001"
-                           class="mt-1 block w-full p-2 rounded-md shadow-sm text-sm">
+                    <label for="traderIdInput" class="block font-medium">TRADER ID:</label>
+                    <input type="text" id="traderIdInput" value="TRADER_BTM_01" class="mt-0.5 block w-full">
                 </div>
                 <div>
-                    <label for="responseTypeSelect" class="block text-xs font-medium text-amber-300">Response Type:</label>
-                    <select id="responseTypeSelect" class="mt-1 block w-full p-2 rounded-md shadow-sm text-sm">
-                        <option value="STREAM_PRICE">Stream Price</option>
-                        <option value="FIXED_PRICE">Fixed Price</option>
+                    <label for="responseTypeSelect" class="block font-medium">RESPONSE:</label>
+                    <select id="responseTypeSelect" class="mt-0.5 block w-full">
+                        <option value="FIXED_PRICE">FIXED PRICE</option>
+                        <option value="STREAM_PRICE">STREAM PRICE</option>
                     </select>
                 </div>
                 <div>
-                    <label for="priceInput" class="block text-xs font-medium text-amber-300">Price:</label>
-                    <input type="number" step="0.01" id="priceInput" placeholder="e.g., 100.25"
-                           class="mt-1 block w-full p-2 rounded-md shadow-sm text-sm">
+                    <label for="priceInput" class="block font-medium">PRICE:</label>
+                    <input type="number" step="0.0001" id="priceInput" placeholder="e.g., 100.0250" class="mt-0.5 block w-full">
                 </div>
                  <div>
-                    <label for="quantityInput" class="block text-xs font-medium text-amber-300">Quantity (optional):</label>
-                    <input type="number" id="quantityInput" placeholder="RFQ default if blank"
-                           class="mt-1 block w-full p-2 rounded-md shadow-sm text-sm">
+                    <label for="quantityInput" class="block font-medium">QUANTITY (OPT):</label>
+                    <input type="number" id="quantityInput" placeholder="RFQ default if blank" class="mt-0.5 block w-full">
                 </div>
             </div>
-            <div class="mt-5 flex justify-end space-x-2">
-                <button id="cancelRespondButton" class="px-3 py-2 btn-secondary rounded-md transition text-sm">Cancel</button>
-                <button id="submitRespondButton" class="px-3 py-2 btn-success rounded-md transition text-sm">Submit Response</button>
+            <div class="mt-4 flex justify-end space-x-2">
+                <button id="cancelRespondButton" class="btn bg-gray-600 hover:bg-gray-500 text-gray-200">Cancel</button>
+                <button id="submitRespondButton" class="btn btn-action-respond">Submit</button>
             </div>
         </div>
     </div>
 
-    <div id="passModal" class="modal fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center p-4 opacity-0 pointer-events-none z-50">
-        <div class="bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-md transform transition-all scale-95 text-amber-400 border border-gray-700">
-            <h3 class="text-lg font-semibold mb-4">Pass on RFQ <span id="passModalRfqId" class="font-mono text-amber-300"></span></h3>
+    <div id="passModal" class="fixed inset-0 flex items-center justify-center p-4 opacity-0 pointer-events-none z-50 modal">
+        <div class="modal-content rounded-none shadow-xl p-4 w-full max-w-xs">
+            <h3 class="text-sm font-semibold mb-3 uppercase border-b border-gray-700 pb-1">Pass RFQ: <span id="passModalRfqId" class="font-normal"></span></h3>
             <input type="hidden" id="passRfqIdHidden">
-             <div class="space-y-3">
+             <div class="space-y-2 text-xs">
                 <div>
-                    <label for="passTraderIdInput" class="block text-xs font-medium text-amber-300">Trader ID:</label>
-                    <input type="text" id="passTraderIdInput" value="TRADER_UI_001"
-                           class="mt-1 block w-full p-2 rounded-md shadow-sm text-sm">
+                    <label for="passTraderIdInput" class="block font-medium">TRADER ID:</label>
+                    <input type="text" id="passTraderIdInput" value="TRADER_BTM_01" class="mt-0.5 block w-full">
                 </div>
                 <div>
-                    <label for="passReasonInput" class="block text-xs font-medium text-amber-300">Reason (Optional):</label>
-                    <input type="text" id="passReasonInput" placeholder="e.g., No interest"
-                           class="mt-1 block w-full p-2 rounded-md shadow-sm text-sm">
+                    <label for="passReasonInput" class="block font-medium">REASON (OPT):</label>
+                    <input type="text" id="passReasonInput" placeholder="e.g., No interest" class="mt-0.5 block w-full">
                 </div>
             </div>
-            <div class="mt-5 flex justify-end space-x-2">
-                <button id="cancelPassButton" class="px-3 py-2 btn-secondary rounded-md transition text-sm">Cancel</button>
-                <button id="submitPassButton" class="px-3 py-2 btn-danger rounded-md transition text-sm">Confirm Pass</button>
+            <div class="mt-4 flex justify-end space-x-2">
+                <button id="cancelPassButton" class="btn bg-gray-600 hover:bg-gray-500 text-gray-200">Cancel</button>
+                <button id="submitPassButton" class="btn btn-action-pass">Confirm Pass</button>
             </div>
         </div>
     </div>
 
-
-<script>
-    const instrumentTypeInput = document.getElementById('instrumentTypeInput');
-    const subscribeButton = document.getElementById('subscribeButton');
-    const disconnectButton = document.getElementById('disconnectButton');
-    const connectionStatusDiv = document.getElementById('connectionStatus');
-    const rfqTableBody = document.getElementById('rfqTableBody');
-    const noRfqsMessageRow = document.getElementById('noRfqsMessageRow');
-    const actionLogDiv = document.getElementById('actionLog');
-
-    const respondModal = document.getElementById('respondModal');
-    const respondModalRfqIdSpan = document.getElementById('respondModalRfqId');
-    const respondRfqIdHidden = document.getElementById('respondRfqIdHidden');
-    const traderIdInput = document.getElementById('traderIdInput');
-    const responseTypeSelect = document.getElementById('responseTypeSelect');
-    const priceInput = document.getElementById('priceInput');
-    const quantityInput = document.getElementById('quantityInput');
-    const cancelRespondButton = document.getElementById('cancelRespondButton');
-    const submitRespondButton = document.getElementById('submitRespondButton');
-
-    const passModal = document.getElementById('passModal');
-    const passModalRfqIdSpan = document.getElementById('passModalRfqId');
-    const passRfqIdHidden = document.getElementById('passRfqIdHidden');
-    const passTraderIdInput = document.getElementById('passTraderIdInput');
-    const passReasonInput = document.getElementById('passReasonInput');
-    const cancelPassButton = document.getElementById('cancelPassButton');
-    const submitPassButton = document.getElementById('submitPassButton');
-
-    let socket = null;
-    const API_BASE_URL = 'http://localhost:3000'; 
-
-    function logMessage(message, type = 'info') {
-        const p = document.createElement('p');
-        const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-        p.innerHTML = `<span class="font-semibold text-gray-500">${timestamp}</span>: ${message}`;
-        
-        if (type === 'error') p.classList.add('text-red-400');
-        else if (type === 'success') p.classList.add('text-green-400');
-        else if (type === 'ws') p.classList.add('text-sky-400'); // Changed for better contrast on dark
-        else p.classList.add('text-amber-300'); // Default log color
-        
-        const initialLog = actionLogDiv.querySelector('p.italic');
-        if (initialLog && actionLogDiv.children.length === 1) {
-            actionLogDiv.innerHTML = '';
-        }
-
-        actionLogDiv.appendChild(p);
-        actionLogDiv.scrollTop = actionLogDiv.scrollHeight;
-    }
-
-    function updateConnectionStatus(status, message = '') {
-        connectionStatusDiv.textContent = `Status: ${status}`;
-        const baseClasses = "text-xs px-3 py-1 rounded-full";
-        if (status === 'Connected') {
-            connectionStatusDiv.className = `${baseClasses} bg-green-700 text-green-200`;
-            logMessage(`Successfully connected. ${message}`, 'success');
-            subscribeButton.disabled = true;
-            instrumentTypeInput.disabled = true;
-            disconnectButton.disabled = false;
-        } else if (status === 'Disconnected' || status === 'Error') {
-            connectionStatusDiv.className = `${baseClasses} bg-red-700 text-red-200`;
-            logMessage(`WebSocket ${status}. ${message}`, 'error');
-            subscribeButton.disabled = false;
-            instrumentTypeInput.disabled = false;
-            disconnectButton.disabled = true;
-        } else { // Connecting
-            connectionStatusDiv.className = `${baseClasses} bg-yellow-600 text-yellow-100`;
-            logMessage(`WebSocket connecting...`, 'info');
-            subscribeButton.disabled = true;
-            instrumentTypeInput.disabled = true;
-            disconnectButton.disabled = true;
-        }
-    }
-    
-    function connectWebSocket(autoSubInstrumentType = null) {
-        const instrumentType = autoSubInstrumentType || instrumentTypeInput.value.trim();
-        if (!instrumentType) {
-            logMessage('Please enter an instrument type to subscribe.', 'error');
-            if(!autoSubInstrumentType) alert('Please enter an instrument type.'); // Only alert if not auto-sub
-            return;
-        }
-        instrumentTypeInput.value = instrumentType; // Ensure input reflects current subscription
-
-        if (socket && socket.readyState === WebSocket.OPEN) {
-            logMessage('Already connected. Please disconnect first to change subscription.', 'info');
-            return;
-        }
-        
-        rfqTableBody.innerHTML = ''; 
-        if (noRfqsMessageRow) rfqTableBody.appendChild(noRfqsMessageRow); // Re-add "waiting" message row
-        if (noRfqsMessageRow) noRfqsMessageRow.classList.remove('hidden');
-
-
-        socket = new WebSocket('ws://localhost:3000/rfq-stream');
-        updateConnectionStatus('Connecting');
-
-        socket.onopen = () => {
-            updateConnectionStatus('Connected', 'Ready to subscribe.');
-            const subscriptionMsg = {
-                action: 'SUBSCRIBE',
-                instrumentType: instrumentType
-            };
-            socket.send(JSON.stringify(subscriptionMsg));
-            logMessage(`Sent subscription request for type: ${instrumentType}`, 'ws');
-        };
-
-        socket.onmessage = (event) => {
-            const message = JSON.parse(event.data);
-            logMessage(`WS RCV: ${JSON.stringify(message).substring(0,150)}...`, 'ws'); // Truncate long messages
-
-            if (message.type === 'SUBSCRIPTION_ACK') {
-                logMessage(`Subscription Acknowledged: ${message.status}`, 'success');
-            } else if (message.type === 'NEW_RFQ') {
-                addRfqToTable(message.data);
-            } else if (message.type === 'RFQ_UPDATE') {
-                updateRfqInTable(message.data);
-            } else if (message.type === 'ERROR') {
-                logMessage(`Server Error: ${message.message}`, 'error');
-            } else if (message.type === 'CONNECTION_ACK') {
-                 logMessage(`Server ACK: ${message.message}`, 'info');
-            }
-        };
-
-        socket.onerror = (error) => {
-            updateConnectionStatus('Error', `WebSocket error: ${error.message || 'Unknown error'}`);
-            console.error('WebSocket Error:', error);
-        };
-
-        socket.onclose = (event) => {
-            let reason = '';
-            if (event.code) reason += `Code: ${event.code} `;
-            if (event.reason) reason += `Reason: ${event.reason}`;
-            updateConnectionStatus('Disconnected', reason);
-            socket = null;
-        };
-    }
-
-    disconnectButton.addEventListener('click', () => {
-        if (socket) {
-            socket.close();
-            logMessage('Disconnected by user.', 'info');
-        }
-    });
-
-    function formatCurrency(amount, currency) {
-        try {
-            return new Intl.NumberFormat('en-US', { style: 'decimal', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(amount);
-        } catch (e) {
-            return `${amount}`; // Fallback
-        }
-    }
-
-    function createRfqTableRow(rfq) {
-        if (noRfqsMessageRow) noRfqsMessageRow.classList.add('hidden');
-        
-        const row = document.createElement('tr');
-        row.id = `rfq-${rfq.id}`;
-        row.className = `text-amber-400 hover:bg-gray-700 transition-colors duration-150`;
-
-        const formattedSize = formatCurrency(rfq.size, rfq.instrument.currency);
-        const statusClass = `status-text-${rfq.status.replace(/\s+/g, '_')}`;
-
-        row.innerHTML = `
-            <td class="font-mono text-xs py-1 px-2">${rfq.id.substring(rfq.id.length - 8)}</td>
-            <td class="py-1 px-2">${rfq.instrument.description || rfq.instrument.cusip}</td>
-            <td class="text-right py-1 px-2">${formattedSize} ${rfq.instrument.currency}</td>
-            <td class="font-semibold py-1 px-2 ${statusClass}">${rfq.status}</td>
-            <td class="py-1 px-2">${rfq.venue.name}</td>
-            <td class="py-1 px-2">${rfq.respondingTraderId || '---'}</td>
-            <td class="py-1 px-2">
-                <div class="flex space-x-1 justify-end">
-                    <button class="respond-btn text-xs btn-success px-2 py-1 rounded" data-rfqid="${rfq.id}" ${rfq.status === 'Lapsed' || rfq.status === 'Passed' ? 'disabled' : ''}>Respond</button>
-                    <button class="pass-btn text-xs btn-danger px-2 py-1 rounded" data-rfqid="${rfq.id}" ${rfq.status === 'Lapsed' || rfq.status === 'Passed' ? 'disabled' : ''}>Pass</button>
-                </div>
-            </td>
-        `;
-        // Details for hover/tooltip (optional enhancement)
-        // row.title = `Full ID: ${rfq.id}\nCustomer: ${rfq.customer.shortName}\nSettlement: ${rfq.settlementDate}\nTTL: ${rfq.timeToLive}s\nStart: ${new Date(rfq.startTime).toLocaleString()}`;
-        return row;
-    }
-
-    function addRfqToTable(rfq) {
-        const row = createRfqTableRow(rfq);
-        rfqTableBody.prepend(row); 
-        attachActionButtonsToRow(row);
-    }
-
-    function updateRfqInTable(rfq) {
-        const existingRow = document.getElementById(`rfq-${rfq.id}`);
-        if (existingRow) {
-            const newRow = createRfqTableRow(rfq);
-            existingRow.replaceWith(newRow);
-            attachActionButtonsToRow(newRow);
-        } else {
-            addRfqToTable(rfq); 
-        }
-    }
-    
-    function attachActionButtonsToRow(rowElement) {
-        const respondBtn = rowElement.querySelector('.respond-btn');
-        if (respondBtn) {
-            respondBtn.addEventListener('click', (e) => {
-                e.stopPropagation(); // Prevent row click if any
-                const rfqId = e.target.dataset.rfqid;
-                openRespondModal(rfqId);
-            });
-        }
-
-        const passBtn = rowElement.querySelector('.pass-btn');
-        if (passBtn) {
-            passBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                const rfqId = e.target.dataset.rfqid;
-                openPassModal(rfqId);
-            });
-        }
-    }
-
-    // Modal handling (mostly unchanged, ensure styling fits)
-    function openModal(modalElement) {
-        modalElement.classList.remove('opacity-0', 'pointer-events-none');
-        modalElement.classList.add('opacity-100');
-        modalElement.querySelector('div > div').classList.remove('scale-95');
-        modalElement.querySelector('div > div').classList.add('scale-100');
-    }
-
-    function closeModal(modalElement) {
-        modalElement.classList.add('opacity-0');
-        modalElement.querySelector('div > div').classList.add('scale-95');
-        modalElement.querySelector('div > div').classList.remove('scale-100');
-        setTimeout(() => {
-          modalElement.classList.add('pointer-events-none');
-        }, 250);
-    }
-
-    function openRespondModal(rfqId) {
-        respondModalRfqIdSpan.textContent = rfqId.substring(rfqId.length - 8);
-        respondRfqIdHidden.value = rfqId;
-        priceInput.value = '';
-        quantityInput.value = '';
-        openModal(respondModal);
-    }
-    cancelRespondButton.addEventListener('click', () => closeModal(respondModal));
-    submitRespondButton.addEventListener('click', async () => {
-        const rfqId = respondRfqIdHidden.value;
-        const payload = {
-            traderId: traderIdInput.value.trim() || 'TRADER_UI_DEFAULT',
-            responseType: responseTypeSelect.value,
-            priceDetails: {
-                price: parseFloat(priceInput.value)
-            }
-        };
-        if (quantityInput.value) {
-            payload.priceDetails.quantity = parseInt(quantityInput.value);
-        }
-
-        if (!payload.priceDetails.price || isNaN(payload.priceDetails.price)) {
-            alert('Please enter a valid price.');
-            return;
-        }
-
-        try {
-            const response = await fetch(`${API_BASE_URL}/rfqs/${rfqId}/respond`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
-            const result = await response.json();
-            if (response.ok) {
-                logMessage(`Responded to RFQ ${rfqId.substring(rfqId.length - 8)}: ${result.message}`, 'success');
-            } else {
-                logMessage(`Error responding to RFQ ${rfqId.substring(rfqId.length - 8)}: ${result.message || response.statusText}`, 'error');
-                alert(`Error: ${result.message || response.statusText}`);
-            }
-        } catch (err) {
-            logMessage(`Network error responding to RFQ ${rfqId.substring(rfqId.length - 8)}: ${err.message}`, 'error');
-            alert(`Network Error: ${err.message}`);
-        }
-        closeModal(respondModal);
-    });
-
-    function openPassModal(rfqId) {
-        passModalRfqIdSpan.textContent = rfqId.substring(rfqId.length - 8);
-        passRfqIdHidden.value = rfqId;
-        passReasonInput.value = '';
-        openModal(passModal);
-    }
-    cancelPassButton.addEventListener('click', () => closeModal(passModal));
-    submitPassButton.addEventListener('click', async () => {
-        const rfqId = passRfqIdHidden.value;
-        const payload = {
-            traderId: passTraderIdInput.value.trim() || 'TRADER_UI_DEFAULT',
-            reason: passReasonInput.value.trim()
-        };
-
-        try {
-            const response = await fetch(`${API_BASE_URL}/rfqs/${rfqId}/pass`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
-            const result = await response.json();
-            if (response.ok) {
-                logMessage(`Passed on RFQ ${rfqId.substring(rfqId.length - 8)}: ${result.message}`, 'success');
-            } else {
-                logMessage(`Error passing on RFQ ${rfqId.substring(rfqId.length - 8)}: ${result.message || response.statusText}`, 'error');
-                alert(`Error: ${result.message || response.statusText}`);
-            }
-        } catch (err) {
-            logMessage(`Network error passing on RFQ ${rfqId.substring(rfqId.length - 8)}: ${err.message}`, 'error');
-            alert(`Network Error: ${err.message}`);
-        }
-        closeModal(passModal);
-    });
-
-    // Initial setup
-    subscribeButton.addEventListener('click', () => connectWebSocket()); // Pass no arg to use input value
-    logMessage('RFQ Monitor UI Initialized. Auto-subscribing to GovBond...', 'info');
-    updateConnectionStatus('Disconnected'); 
-    
-    // Auto-subscribe to GovBond on load
-    document.addEventListener('DOMContentLoaded', () => {
-        instrumentTypeInput.value = 'GovBond'; // Set default for display
-        connectWebSocket('GovBond'); // Auto-connect with GovBond
-    });
-
-</script>
+<script src="monitor.js"></script>
 </body>
 </html>

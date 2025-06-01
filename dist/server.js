@@ -155,7 +155,7 @@ function startSimulator() {
         rfqs.push(newRfq);
         logger.info('Simulator generated new RFQ:', { id: newRfq.id, instrumentType: randomInstrument.instrumentType });
         broadcastNewRfq(newRfq);
-    }, Math.random() * (5000 - 3000) + 3000);
+    }, Math.random() * 240 + 300);
 }
 // --- RFQ Lifecycle Management (TTL Expiry) ---
 function startLifecycleManager() {

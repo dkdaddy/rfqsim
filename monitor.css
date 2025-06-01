@@ -1,0 +1,160 @@
+:root {
+    --bloomberg-bg: #181818; /* Very dark grey, almost black */
+    --bloomberg-bg-alt: #222222; /* Slightly lighter for striping/hover */
+    --bloomberg-text-amber: #FFBF00; /* Classic amber */
+    --bloomberg-text-light-amber: #FFD700;
+    --bloomberg-border: #383838;
+    --bloomberg-green: #00CF91; /* Green for BUY/BID */
+    --bloomberg-red: #FF5A5A;   /* Red for SELL/OFFER */
+    --bloomberg-blue: #50B3F0;  /* A blue often seen for other highlights */
+    --bloomberg-header-bg: #0A0A0A;
+}
+
+body {
+    font-family: 'Menlo', 'Monaco', 'Consolas', "Liberation Mono", "Courier New", monospace;
+    background-color: var(--bloomberg-bg);
+    color: var(--bloomberg-text-amber);
+    font-size: 13px; /* Typical terminal font size */
+    line-height: 1.4;
+}
+
+.rfq-grid th, .rfq-grid td {
+    padding: 4px 8px;
+    border-bottom: 1px solid var(--bloomberg-border);
+    white-space: nowrap; /* Prevent wrapping in cells */
+}
+.rfq-grid th {
+    background-color: var(--bloomberg-header-bg);
+    color: var(--bloomberg-text-light-amber);
+    text-align: left;
+    font-weight: normal; /* Terminals often don't use bold headers */
+    text-transform: uppercase;
+    font-size: 11px;
+}
+.rfq-grid tbody tr:nth-child(odd) {
+    background-color: var(--bloomberg-bg);
+}
+.rfq-grid tbody tr:nth-child(even) {
+    background-color: var(--bloomberg-bg-alt);
+}
+.rfq-grid tbody tr:hover {
+    background-color: #2A2A2A; /* Darker hover */
+    color: #FFFFFF;
+}
+
+.text-buy { color: var(--bloomberg-green); }
+.text-sell { color: var(--bloomberg-red); }
+.bg-buy-flash { background-color: var(--bloomberg-green) !important; color: var(--bloomberg-bg) !important; }
+.bg-sell-flash { background-color: var(--bloomberg-red) !important; color: var(--bloomberg-bg) !important; }
+
+
+/* Custom scrollbar for dark theme */
+::-webkit-scrollbar { width: 7px; height: 7px; }
+::-webkit-scrollbar-track { background: var(--bloomberg-bg-alt); }
+::-webkit-scrollbar-thumb { background: #555; }
+::-webkit-scrollbar-thumb:hover { background: #777; }
+
+/* Inputs and Buttons */
+input[type="text"], input[type="number"], select {
+    background-color: #0A0A0A;
+    color: var(--bloomberg-text-amber);
+    border: 1px solid var(--bloomberg-border);
+    padding: 4px 6px;
+    font-size: 12px;
+    border-radius: 0; /* Sharp corners */
+}
+input[type="text"]:focus, input[type="number"]:focus, select:focus {
+    outline: none;
+    border-color: var(--bloomberg-text-amber);
+    box-shadow: 0 0 0 1px var(--bloomberg-text-amber);
+}
+.btn {
+    padding: 3px 8px;
+    border: 1px solid var(--bloomberg-border);
+    border-radius: 0;
+    font-size: 11px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: background-color 0.1s, color 0.1s;
+}
+.btn-primary {
+    background-color: var(--bloomberg-text-amber);
+    color: var(--bloomberg-bg);
+    border-color: var(--bloomberg-text-amber);
+}
+.btn-primary:hover {
+    background-color: var(--bloomberg-text-light-amber);
+    border-color: var(--bloomberg-text-light-amber);
+}
+.btn-action-respond {
+    background-color: var(--bloomberg-blue);
+    color: var(--bloomberg-bg);
+    border-color: var(--bloomberg-blue);
+}
+.btn-action-respond:hover { background-color: #70C8FF; }
+.btn-action-pass {
+    background-color: var(--bloomberg-red);
+    color: var(--bloomberg-bg);
+    border-color: var(--bloomberg-red);
+}
+.btn-action-pass:hover { background-color: #FF7A7A; }
+.btn:disabled {
+    background-color: #333 !important;
+    color: #777 !important;
+    border-color: #444 !important;
+    cursor: not-allowed;
+}
+.modal {
+    background-color: rgba(0,0,0,0.85);
+}
+.modal-content {
+    background-color: var(--bloomberg-bg-alt);
+    border: 1px solid var(--bloomberg-border);
+    color: var(--bloomberg-text-amber);
+}
+/* In monitor.css */
+.rfq-grid tbody tr.selected-row td {
+    background-color: #3B75AF; /* Light blue for selected row */
+    /* Or a subtle amber highlight: */
+    /* background-color: rgba(251, 191, 36, 0.15); */
+}
+
+/* Optional: Keep selected color even on hover */
+.rfq-grid tbody tr.selected-row:hover td {
+    background-color: #3B75AF; /* Keep the same light blue on hover */
+}
+
+.rfq-grid th[data-sort-key] {
+    cursor: pointer;
+    user-select: none; /* Prevent text selection on click */
+}
+.rfq-grid th[data-sort-key]:hover {
+    background-color: #222222; /* Slightly lighter than header bg */
+}
+.sort-indicator {
+    display: inline-block;
+    width: 1em; /* Ensure space for the arrow */
+    text-align: center;
+    margin-left: 4px;
+    color: var(--bloomberg-text-light-amber); /* Match header text */
+}
+.sort-indicator.asc::after { content: '▲'; }
+.sort-indicator.desc::after { content: '▼'; }
+
+.rfq-grid .filter-row td {
+    padding: 2px 4px; /* Less padding for filter inputs */
+    background-color: var(--bloomberg-header-bg); /* Match header */
+}
+.rfq-grid .filter-row input[type="text"] {
+    width: 100%;
+    padding: 3px 5px;
+    font-size: 10px; /* Smaller font for filter inputs */
+    background-color: #2d2d2d; /* Darker input background */
+    border: 1px solid var(--bloomberg-border);
+    color: var(--bloomberg-text-light-amber);
+}
+.rfq-grid .filter-row input[type="text"]::placeholder {
+    color: #666;
+    font-style: italic;
+}
+.btn.btn-xs { font-size: 9px; padding: 2px 4px; }
