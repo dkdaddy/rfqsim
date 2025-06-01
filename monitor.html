@@ -40,11 +40,12 @@
                 <div><span class="font-medium text-gray-500">Status:</span> <span id="detailRfqStatus" class="text-gray-100">-</span></div>
                 <div><span class="font-medium text-gray-500">Trader:</span> <span id="detailRfqTrader" class="text-gray-100">-</span></div>
                 <div><span class="font-medium text-gray-500">DV01:</span> <span id="detailRfqDv01" class="text-gray-100">-</span></div>
+                <div><span class="font-medium text-gray-500">Remaining:</span> <span id="detailRfqRemaining" class="text-gray-100">-</span></div>
                 <!-- Quick Respond Section -->
                 <div class="col-span-full mt-2 pt-2 border-t border-gray-700 flex items-center space-x-2" id="quickRespondSection">
                     <label for="detailRespondPriceInput" class="font-medium text-gray-500 text-xs">Respond Price:</label>
                     <input type="number" step="0.0001" id="detailRespondPriceInput" placeholder="e.g., 100.0250" class="text-xs w-28">
-                    <button id="detailRespondSubmitButton" class="btn btn-action-respond text-xs px-2 py-0.5">Submit Hit</button>
+                    <button id="detailRespondSubmitButton" class="btn btn-action-respond text-xs px-2 py-0.5">Submit Send</button>
                 </div>
             </div>
             <div id="noRfqSelectedMessage" class="text-center py-3 italic text-gray-500 text-xs">
@@ -69,6 +70,7 @@
                             <th data-sort-key="status">STATUS <span class="sort-indicator"></span></th>
                             <th data-sort-key="trader">TRADER <span class="sort-indicator"></span></th>
                             <th data-sort-key="dv01">DV01 <span class="sort-indicator"></span></th>
+                            <th data-sort-key="remainingTime">REMAINING <span class="sort-indicator"></span></th>
                             <th>ACTIONS</th>
                         </tr>
                         <tr class="filter-row">
@@ -84,11 +86,12 @@
                             <td><input type="text" data-filter-key="status" placeholder="Filter Status"></td>
                             <td><input type="text" data-filter-key="trader" placeholder="Filter Trader"></td>
                             <td><input type="text" data-filter-key="dv01" placeholder="Filter DV01"></td>
+                            <td><input type="text" data-filter-key="remainingTime" placeholder="Filter Time"></td>
                             <td><button id="clearFiltersButton" class="btn btn-xs bg-gray-700 hover:bg-gray-600 text-gray-400 w-full">Clear</button></td>
                         </tr>
                     </thead>
                     <tbody id="rfqTableBody">
-                        <tr id="noRfqsMessageRow"><td colspan="13" class="text-center py-10 italic text-gray-600">Awaiting Connection & Subscription...</td></tr>
+                        <tr id="noRfqsMessageRow"><td colspan="14" class="text-center py-10 italic text-gray-600">Awaiting Connection & Subscription...</td></tr>
                     </tbody>
                 </table>
             </div>

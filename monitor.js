@@ -39,6 +39,7 @@ const detailRfqCustSpan = document.getElementById('detailRfqCust');
 const detailRfqStatusSpan = document.getElementById('detailRfqStatus');
 const detailRfqTraderSpan = document.getElementById('detailRfqTrader');
 const detailRfqDv01Span = document.getElementById('detailRfqDv01');
+const detailRfqRemainingSpan = document.getElementById('detailRfqRemaining');
 const quickRespondSection = document.getElementById('quickRespondSection');
 const detailRespondPriceInput = document.getElementById('detailRespondPriceInput');
 const detailRespondSubmitButton = document.getElementById('detailRespondSubmitButton');
@@ -51,6 +52,7 @@ let currentSelectedRfqId = null;
 let currentSortKey = null;
 let currentSortDirection = 'asc'; // 'asc' or 'desc'
 let activeFilters = {}; // To store { columnKey: filterValue }
+let tableUpdateInterval = null;
 
 function logMessage(message, type = 'info') {
     const p = document.createElement('p');
@@ -188,6 +190,21 @@ function canRfqBeActioned(status) {
     return !nonActionableStatuses.includes(status);
 }
 
+function calculateRemainingTime(startTimeStr, timeToLiveSeconds) {
+    const startTimeMs = new Date(startTimeStr).getTime();
+    const expiryTimeMs = startTimeMs + (timeToLiveSeconds * 1000);
+    const nowMs = Date.now();
+    const remainingMs = expiryTimeMs - nowMs;
+
+    if (remainingMs <= 0) {
+        return { seconds: 0, formatted: "00:00" };
+    }
+    const totalSeconds = Math.floor(remainingMs / 1000);
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+    return { seconds: totalSeconds, formatted: `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}` };
+}
+
 
 function createRfqTableRow(rfq) {
     if (noRfqsMessageRow) noRfqsMessageRow.classList.add('hidden');
@@ -200,6 +217,8 @@ function createRfqTableRow(rfq) {
 
     const formattedQty = formatQuantity(rfq.size);
     const isActionable = canRfqBeActioned(rfq.status);
+    const remainingTime = calculateRemainingTime(rfq.startTime, rfq.timeToLive);
+    const remainingTimeClass = remainingTime.seconds <= 10 && remainingTime.seconds > 0 ? 'text-red-400 font-semibold' : (remainingTime.seconds === 0 ? 'text-gray-500' : '');
 
     row.innerHTML = `
         <td class="font-mono">${rfq.id.slice(-6)}</td>
@@ -215,6 +234,9 @@ function createRfqTableRow(rfq) {
         <td>${rfq.respondingTraderId || '---'}</td>
         <td>
             ${rfq.instrument.DV01 !== undefined ? rfq.instrument.DV01.toFixed(2) : '---'}
+        </td>
+        <td class="${remainingTimeClass}">
+            ${rfq.status === 'Lapsed' || rfq.status === 'Passed' || rfq.status === 'Filled' ? '---' : remainingTime.formatted}
         </td>
         <td>
             <div class="flex space-x-1 justify-start">
@@ -312,6 +334,7 @@ function displayRfqDetails(rfqId) {
         detailRfqStatusSpan.textContent = '-'; detailRfqStatusSpan.className = 'text-gray-100';
         detailRfqTraderSpan.textContent = '-';
         detailRfqDv01Span.textContent = '-';
+        detailRfqRemainingSpan.textContent = '-';
 
         detailRespondPriceInput.value = '';
         detailRespondPriceInput.disabled = true;
@@ -343,6 +366,9 @@ function displayRfqDetails(rfqId) {
     detailRfqStatusSpan.className = `font-semibold ${rfq.status === 'New' ? 'text-blue-400' : rfq.status === 'On the Wire' ? 'text-yellow-400' : rfq.status === 'Passed' ? 'text-red-400' : 'text-gray-500'}`;
     detailRfqTraderSpan.textContent = rfq.respondingTraderId || '---';
     detailRfqDv01Span.textContent = rfq.instrument.DV01 !== undefined ? rfq.instrument.DV01.toFixed(2) : 'N/A';
+    
+    const remainingTime = calculateRemainingTime(rfq.startTime, rfq.timeToLive);
+    detailRfqRemainingSpan.textContent = (rfq.status === 'Lapsed' || rfq.status === 'Passed' || rfq.status === 'Filled') ? 'N/A' : remainingTime.formatted;
 
     // Quick Respond Section
     quickRespondSection.classList.remove('hidden');
@@ -466,6 +492,7 @@ function getSortableValue(rfq, key) {
         case 'status': return rfq.status;
         case 'trader': return rfq.respondingTraderId || ''; // Sort empty strings last/first
         case 'dv01': return rfq.instrument.DV01 !== undefined ? rfq.instrument.DV01 : Number.NEGATIVE_INFINITY; // Sort N/A (represented by -Infinity) first on asc
+        case 'remainingTime': return (rfq.status === 'Lapsed' || rfq.status === 'Passed' || rfq.status === 'Filled') ? -1 : calculateRemainingTime(rfq.startTime, rfq.timeToLive).seconds; // Sort expired/done RFQs last
         default: return rfq[key];
     }
 }
@@ -490,6 +517,9 @@ function applyFiltersToRfqs(rfqsArray) {
                 value = new Date(rfq.instrument.maturity).toLocaleDateString('en-GB', { year: '2-digit', month: 'short', day: 'numeric' });
             } else if (key === 'dv01') {
                 value = rfq.instrument.DV01 !== undefined ? rfq.instrument.DV01.toFixed(2) : 'N/A';
+            } else if (key === 'remainingTime') {
+                const remaining = calculateRemainingTime(rfq.startTime, rfq.timeToLive);
+                value = (rfq.status === 'Lapsed' || rfq.status === 'Passed' || rfq.status === 'Filled') ? '---' : remaining.formatted;
             } else if (typeof value !== 'string') {
                 value = String(value);
             }
@@ -598,6 +628,12 @@ document.addEventListener('DOMContentLoaded', () => {
     instrumentTypeInput.value = 'GovBond';
     displayRfqDetails(null); // Ensure detail panel is in initial state
     connectWebSocket('GovBond');
+
+    // Start interval to update the table for countdowns
+    if (tableUpdateInterval) clearInterval(tableUpdateInterval);
+    tableUpdateInterval = setInterval(() => {
+        if (rfqDataMap.size > 0) renderTable();
+    }, 1000); // Update every second
 
     // Add event listener for header clicks (sorting)
     document.querySelector('.rfq-grid thead').addEventListener('click', handleHeaderClick);
