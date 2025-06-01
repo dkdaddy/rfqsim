@@ -38,6 +38,7 @@ const detailRfqVenueSpan = document.getElementById('detailRfqVenue');
 const detailRfqCustSpan = document.getElementById('detailRfqCust');
 const detailRfqStatusSpan = document.getElementById('detailRfqStatus');
 const detailRfqTraderSpan = document.getElementById('detailRfqTrader');
+const detailRfqDv01Span = document.getElementById('detailRfqDv01');
 const quickRespondSection = document.getElementById('quickRespondSection');
 const detailRespondPriceInput = document.getElementById('detailRespondPriceInput');
 const detailRespondSubmitButton = document.getElementById('detailRespondSubmitButton');
@@ -213,6 +214,9 @@ function createRfqTableRow(rfq) {
         <td class="font-semibold ${rfq.status === 'New' ? 'text-blue-400' : rfq.status === 'On the Wire' ? 'text-yellow-400' : rfq.status === 'Passed' ? 'text-red-400' : 'text-gray-500'}">${rfq.status}</td>
         <td>${rfq.respondingTraderId || '---'}</td>
         <td>
+            ${rfq.instrument.DV01 !== undefined ? rfq.instrument.DV01.toFixed(2) : '---'}
+        </td>
+        <td>
             <div class="flex space-x-1 justify-start">
                 <button class="respond-btn btn btn-action-respond" data-rfqid="${rfq.id}" ${!isActionable ? 'disabled' : ''}>Hit</button>
                 <button class="pass-btn btn btn-action-pass" data-rfqid="${rfq.id}" ${!isActionable ? 'disabled' : ''}>Pass</button>
@@ -307,6 +311,7 @@ function displayRfqDetails(rfqId) {
         detailRfqCustSpan.textContent = '-';
         detailRfqStatusSpan.textContent = '-'; detailRfqStatusSpan.className = 'text-gray-100';
         detailRfqTraderSpan.textContent = '-';
+        detailRfqDv01Span.textContent = '-';
 
         detailRespondPriceInput.value = '';
         detailRespondPriceInput.disabled = true;
@@ -337,6 +342,7 @@ function displayRfqDetails(rfqId) {
     detailRfqStatusSpan.textContent = rfq.status;
     detailRfqStatusSpan.className = `font-semibold ${rfq.status === 'New' ? 'text-blue-400' : rfq.status === 'On the Wire' ? 'text-yellow-400' : rfq.status === 'Passed' ? 'text-red-400' : 'text-gray-500'}`;
     detailRfqTraderSpan.textContent = rfq.respondingTraderId || '---';
+    detailRfqDv01Span.textContent = rfq.instrument.DV01 !== undefined ? rfq.instrument.DV01.toFixed(2) : 'N/A';
 
     // Quick Respond Section
     quickRespondSection.classList.remove('hidden');
@@ -459,6 +465,7 @@ function getSortableValue(rfq, key) {
         case 'customer': return rfq.customer.shortName;
         case 'status': return rfq.status;
         case 'trader': return rfq.respondingTraderId || ''; // Sort empty strings last/first
+        case 'dv01': return rfq.instrument.DV01 !== undefined ? rfq.instrument.DV01 : Number.NEGATIVE_INFINITY; // Sort N/A (represented by -Infinity) first on asc
         default: return rfq[key];
     }
 }
@@ -481,6 +488,8 @@ function applyFiltersToRfqs(rfqsArray) {
                 value = new Date(rfq.startTime).toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
             } else if (key === 'maturity' && rfq.instrument.maturity !== 'N/A') {
                 value = new Date(rfq.instrument.maturity).toLocaleDateString('en-GB', { year: '2-digit', month: 'short', day: 'numeric' });
+            } else if (key === 'dv01') {
+                value = rfq.instrument.DV01 !== undefined ? rfq.instrument.DV01.toFixed(2) : 'N/A';
             } else if (typeof value !== 'string') {
                 value = String(value);
             }

@@ -39,6 +39,7 @@
                 <div><span class="font-medium text-gray-500">Customer:</span> <span id="detailRfqCust" class="text-gray-100">-</span></div>
                 <div><span class="font-medium text-gray-500">Status:</span> <span id="detailRfqStatus" class="text-gray-100">-</span></div>
                 <div><span class="font-medium text-gray-500">Trader:</span> <span id="detailRfqTrader" class="text-gray-100">-</span></div>
+                <div><span class="font-medium text-gray-500">DV01:</span> <span id="detailRfqDv01" class="text-gray-100">-</span></div>
                 <!-- Quick Respond Section -->
                 <div class="col-span-full mt-2 pt-2 border-t border-gray-700 flex items-center space-x-2" id="quickRespondSection">
                     <label for="detailRespondPriceInput" class="font-medium text-gray-500 text-xs">Respond Price:</label>
@@ -51,7 +52,7 @@
             </div>
         </div>
 
-        <div class="flex-grow bg-black border border-gray-700 overflow-hidden">
+        <div class="flex-grow bg-black border border-gray-700">
             <div class="overflow-auto h-[570px]">
                 <table class="min-w-full rfq-grid">
                     <thead>
@@ -67,6 +68,7 @@
                             <th data-sort-key="customer">CUST <span class="sort-indicator"></span></th>
                             <th data-sort-key="status">STATUS <span class="sort-indicator"></span></th>
                             <th data-sort-key="trader">TRADER <span class="sort-indicator"></span></th>
+                            <th data-sort-key="dv01">DV01 <span class="sort-indicator"></span></th>
                             <th>ACTIONS</th>
                         </tr>
                         <tr class="filter-row">
@@ -81,11 +83,12 @@
                             <td><input type="text" data-filter-key="customer" placeholder="Filter Cust"></td>
                             <td><input type="text" data-filter-key="status" placeholder="Filter Status"></td>
                             <td><input type="text" data-filter-key="trader" placeholder="Filter Trader"></td>
+                            <td><input type="text" data-filter-key="dv01" placeholder="Filter DV01"></td>
                             <td><button id="clearFiltersButton" class="btn btn-xs bg-gray-700 hover:bg-gray-600 text-gray-400 w-full">Clear</button></td>
                         </tr>
                     </thead>
                     <tbody id="rfqTableBody">
-                        <tr id="noRfqsMessageRow"><td colspan="12" class="text-center py-10 italic text-gray-600">Awaiting Connection & Subscription...</td></tr>
+                        <tr id="noRfqsMessageRow"><td colspan="13" class="text-center py-10 italic text-gray-600">Awaiting Connection & Subscription...</td></tr>
                     </tbody>
                 </table>
             </div>

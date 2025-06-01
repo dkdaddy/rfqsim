@@ -16,11 +16,12 @@ let customers = [
     { id: 'CUST03', tier: '1', shortName: 'Demo Bank C', longName: 'Demonstration Bank Charlie Ltd.' },
 ];
 let instruments = [
-    { id: 'INST01', cusip: '912828ABC', maturity: '2030-12-01', currency: 'USD', instrumentType: 'GovBond', description: 'US Treasury Bond 2.5% 2030' },
-    { id: 'INST02', cusip: '912828XYZ', maturity: '2028-06-15', currency: 'USD', instrumentType: 'GovBond', description: 'US Treasury Note 1.875% 2028' },
+    // Initial DV01 values can be placeholders or typical values
+    { id: 'INST01', cusip: '912828ABC', maturity: '2030-12-01', currency: 'USD', instrumentType: 'GovBond', description: 'US Treasury Bond 2.5% 2030', DV01: 120.00 },
+    { id: 'INST02', cusip: '912828XYZ', maturity: '2028-06-15', currency: 'USD', instrumentType: 'GovBond', description: 'US Treasury Note 1.875% 2028', DV01: 95.00 },
     { id: 'INST03', cusip: 'AAPL123', maturity: 'N/A', currency: 'USD', instrumentType: 'Equity', description: 'Apple Inc. Common Stock' },
     { id: 'INST04', cusip: 'MSFT456', maturity: 'N/A', currency: 'USD', instrumentType: 'Equity', description: 'Microsoft Corp. Common Stock' },
-    { id: 'INST05', cusip: 'CORPBD01', maturity: '2035-03-01', currency: 'EUR', instrumentType: 'CorpBond', description: 'Demo Corp Bond A 5Y EUR' },
+    { id: 'INST05', cusip: 'CORPBD01', maturity: '2035-03-01', currency: 'EUR', instrumentType: 'CorpBond', description: 'Demo Corp Bond A 5Y EUR', DV01: 140.00 },
 ];
 let venues = [
     { venueId: 'V01', name: 'SimuVenue A', connectionType: 'Simulated' },
@@ -89,6 +90,8 @@ function getFullRfqDetails(rfq) {
             venue: { venueId: 'N/A', name: 'Venue details missing', connectionType: 'N/A' }
         };
     }
+    // The instrument object from the 'instruments' array (which now includes DV01) is used here.
+    // If DV01 was dynamically calculated for this specific RFQ, it should be on this 'instrument' instance.
     const { id: instrumentObjId, ...instrumentApi } = instrument;
     const { longName, ...customerApi } = customer;
     return {
@@ -134,28 +137,40 @@ function broadcastRfqUpdate(rfq) {
 function startSimulator() {
     logger.info('Starting RFQ Simulator...');
     setInterval(() => {
-        const randomInstrument = instruments[Math.floor(Math.random() * instruments.length)];
+        // Select a template instrument
+        const instrumentTemplate = instruments[Math.floor(Math.random() * instruments.length)];
         const randomCustomer = customers[Math.floor(Math.random() * customers.length)];
         const randomVenue = venues[Math.floor(Math.random() * venues.length)];
         const now = new Date();
+        // Create a copy of the instrument template to potentially modify DV01 for this specific RFQ instance
+        const currentInstrumentInstance = { ...instrumentTemplate };
         const newRfq = {
             id: `RFQ-${(0, uuid_1.v4)()}`,
             startTime: now.toISOString(),
             timeToLive: Math.floor(Math.random() * (120 - 30 + 1) + 30),
-            instrumentId: randomInstrument.id,
+            instrumentId: instrumentTemplate.id, // Changed from randomInstrument.id
             customerId: randomCustomer.id,
-            venueId: randomVenue.venueId,
-            size: Math.floor(Math.random() * (5000000 - 100000 + 1) + 100000) * (randomInstrument.instrumentType === 'Equity' ? 0.01 : 1),
+            venueId: randomVenue.venueId, // Generate DV01 for bond types for this specific instance
+            size: Math.floor(Math.random() * (5000000 - 100000 + 1) + 100000) * (currentInstrumentInstance.instrumentType === 'Equity' ? 0.01 : 1),
             settlementDate: new Date(new Date().setDate(now.getDate() + 2)).toISOString().split('T')[0],
             status: 'New',
             respondingTraderId: null,
         };
-        if (randomInstrument.instrumentType === 'Equity')
+        // Update DV01 on the instance if it's a bond type
+        if (currentInstrumentInstance.instrumentType === 'GovBond' || currentInstrumentInstance.instrumentType === 'CorpBond') {
+            currentInstrumentInstance.DV01 = parseFloat((Math.random() * 200 + 50).toFixed(2));
+        }
+        if (currentInstrumentInstance.instrumentType === 'Equity')
             newRfq.size = Math.floor(newRfq.size / 1000) * 100;
         rfqs.push(newRfq);
-        logger.info('Simulator generated new RFQ:', { id: newRfq.id, instrumentType: randomInstrument.instrumentType });
-        broadcastNewRfq(newRfq);
-    }, Math.random() * 240 + 300);
+        // Temporarily update the main instruments array for getFullRfqDetails to pick up the dynamic DV01.
+        // This is a simplification for the simulator. A real system would fetch/calculate fresh instrument details.
+        const instrumentIndex = instruments.findIndex(i => i.id === currentInstrumentInstance.id);
+        if (instrumentIndex !== -1)
+            instruments[instrumentIndex] = currentInstrumentInstance; // Update with potentially new DV01
+        logger.info('Simulator generated new RFQ:', { id: newRfq.id, instrumentType: currentInstrumentInstance.instrumentType, DV01: currentInstrumentInstance.DV01 });
+        broadcastNewRfq(newRfq); // This will use getFullRfqDetails which reads from the (potentially updated) instruments array
+    }, Math.random() * 2400 + 3000); // Adjusted interval for clarity
 }
 // --- RFQ Lifecycle Management (TTL Expiry) ---
 function startLifecycleManager() {
